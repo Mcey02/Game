@@ -13,24 +13,41 @@ class Tutorial < Gosu::Window
         @star_anim = Gosu::Image.load_tiles("star.png", 25, 25)
         @stars = Array.new
         @font = Gosu::Font.new(20)
+        
+        @rocks = Array.new
+        @death = Gosu::Sample.new("death.ogg")
+        @played = false
     end
 
     def update
-        if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::GP_LEFT
-            @player.turn_left
-        end
-        if Gosu.button_down? Gosu::KB_RIGHT or Gosu::button_down? Gosu::GP_RIGHT
-            @player.turn_right
-        end
-        if Gosu.button_down? Gosu::KB_UP or Gosu::button_down? Gosu::GP_BUTTON_0
-            @player.accelerate
-        end
-        @player.move
-        @player.collect_stars(@stars)
+        if @player.dead == false
+            if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::GP_LEFT
+                @player.turn_left
+            end
+            if Gosu.button_down? Gosu::KB_RIGHT or Gosu::button_down? Gosu::GP_RIGHT
+                @player.turn_right
+            end
+            if Gosu.button_down? Gosu::KB_UP or Gosu::button_down? Gosu::GP_BUTTON_0
+                @player.accelerate
+            end
+            @player.move
+            @player.collect_stars(@stars)
+            @player.die_to_rock(@rocks)
 
-        if rand(100) < 4 and @stars.size < 25
-            @stars.push(Star.new(@star_anim))
+            if rand(100) < 4 and @stars.size < 25
+                @stars.push(Star.new(@star_anim))
+            end
+
+            if @rocks.size < 5
+                @rocks.push(Rock.new)
+            end
+        else
+            if @played == false
+                @death.play
+                @played = true
+            end
         end
+
     end
 
     def draw
@@ -38,6 +55,10 @@ class Tutorial < Gosu::Window
         @player.draw
         @stars.each { |star| star.draw }
         @font.draw("Score: #{@player.score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::YELLOW)
+        @rocks.each {|rock| rock.draw }
+        if @player.dead == true
+            @font.draw("DEATH", 170, 190, ZOrder::UI, 5.0, 5.0, Gosu::Color::RED)
+        end
     end
 
     def button_down(id)
@@ -55,6 +76,8 @@ class Player
         @beep = Gosu::Sample.new("beep.wav")
         @x = @y = @vel_x = @vel_y = @angle = 0.0
         @score = 0
+        @font = Gosu::Font.new(10)
+        @dead = false
     end
 
     def warp(x, y)
@@ -92,6 +115,10 @@ class Player
         @score
     end
 
+    def dead
+        @dead
+    end
+
     def collect_stars(stars)
         stars.reject!  do |star|
             if Gosu.distance(@x, @y, star.x, star.y) < 35
@@ -100,6 +127,14 @@ class Player
                 true
             else
                 false
+            end
+        end
+    end
+
+    def die_to_rock(rocks)
+        rocks.reject!  do |rock|
+            if Gosu.distance(@x, @y, rock.x, rock.y) < 35
+                @dead = true
             end
         end
     end
@@ -128,4 +163,17 @@ class Star
     end
 end
 
+class Rock
+    attr_reader :x, :y
+
+    def initialize
+        @image = Gosu::Image.new("rock.png")
+        @x = rand * 640
+        @y = rand * 480
+    end
+
+    def draw  
+        @image.draw(@x, @y, ZOrder::STARS, 1, 1)
+    end
+end
 Tutorial.new.show
