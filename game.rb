@@ -2,13 +2,13 @@ require 'gosu'
 
 class Tutorial < Gosu::Window
     def initialize
-        super 640, 480
+        super 1280, 960
         self.caption = "Tutorial Game"
 
         @background_image = Gosu::Image.new("space.png", :tileable => true)
 
         @player = Player.new
-        @player.warp(320, 240)
+        @player.warp(640, 480)
 
         @star_anim = Gosu::Image.load_tiles("star.png", 25, 25)
         @stars = Array.new
@@ -55,9 +55,10 @@ class Tutorial < Gosu::Window
         @player.draw
         @stars.each { |star| star.draw }
         @font.draw("Score: #{@player.score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::YELLOW)
+        @font.draw("Lives:  #{@player.lives}", 10, 30, ZOrder::UI, 1.0, 1.0, Gosu::Color::YELLOW)
         @rocks.each {|rock| rock.draw }
         if @player.dead == true
-            @font.draw("DEATH", 170, 190, ZOrder::UI, 5.0, 5.0, Gosu::Color::RED)
+            @font.draw("DEATH", 540, 430, ZOrder::UI, 5.0, 5.0, Gosu::Color::RED)
         end
     end
 
@@ -76,6 +77,7 @@ class Player
         @beep = Gosu::Sample.new("beep.wav")
         @x = @y = @vel_x = @vel_y = @angle = 0.0
         @score = 0
+        @lives = 3
         @font = Gosu::Font.new(10)
         @dead = false
     end
@@ -100,8 +102,8 @@ class Player
     def move
         @x += @vel_x
         @y += @vel_y
-        @x %= 640
-        @y %= 480
+        @x %= 1280
+        @y %= 960
 
         @vel_x *= 0.95
         @vel_y *= 0.95
@@ -114,6 +116,11 @@ class Player
     def score
         @score
     end
+    
+    def lives
+        @lives
+    end
+
 
     def dead
         @dead
@@ -134,8 +141,11 @@ class Player
     def die_to_rock(rocks)
         rocks.reject!  do |rock|
             if Gosu.distance(@x, @y, rock.x, rock.y) < 35
-                @dead = true
-            end
+                @lives -= 1
+            end    
+        end
+        if @lives <= 0
+            @dead = true
         end
     end
 end
@@ -153,8 +163,8 @@ class Star
         @color.red = rand(256 - 40) + 40
         @color.green = rand(256 - 40) + 40
         @color.blue = rand(256 - 40) + 40
-        @x = rand * 640
-        @y = rand * 480
+        @x = rand * 1280
+        @y = rand * 960
     end
 
     def draw
@@ -168,12 +178,12 @@ class Rock
 
     def initialize
         @image = Gosu::Image.new("rock.png")
-        @x = rand * 640
-        @y = rand * 480
+        @x = rand * 1280
+        @y = rand * 960
     end
 
     def draw  
-        @image.draw(@x, @y, ZOrder::STARS, 1, 1)
+        @image.draw(@x - @image.width / 2.0, @y - @image.height / 2.0, ZOrder::STARS, 1, 1)
     end
 end
 Tutorial.new.show
